@@ -61,6 +61,8 @@ async function handleGenerateEvaluation() {
     const result = await store.generateAndSaveEvaluation(diaryId.value)
     if (!result) {
       evaluationError.value = '评价生成失败，请检查网络或 API 设置后重试'
+    } else if (result.isFallback) {
+      evaluationError.value = 'AI 暂时无法连接，已显示预设评价。请检查 API 配置后重试。'
     }
   } catch (e) {
     console.error('生成评价失败:', e)
@@ -165,6 +167,27 @@ function handleDelete() {
         <!-- AI 评价 -->
         <div v-if="diary.aiEvaluation" class="mb-6">
           <AIEvaluation :evaluation="diary.aiEvaluation" />
+
+          <!-- 降级评价提示 + 重新生成按钮 -->
+          <div v-if="diary.aiEvaluation.isFallback" style="margin-top: 0.75rem;">
+            <div style="padding: 0.75rem 1rem; border-radius: 12px; background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.2); display: flex; align-items: center; gap: 0.5rem; color: #d97706; font-size: 0.875rem; margin-bottom: 0.75rem;">
+              <AlertCircle :size="16" />
+              AI 暂时无法连接，以上为预设评价。配置好 API Key 后可重新生成真实评价。
+            </div>
+            <div v-if="evaluationError && !isGeneratingEvaluation" style="margin-bottom: 0.75rem; padding: 0.75rem 1rem; border-radius: 12px; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2); display: flex; align-items: center; gap: 0.5rem; color: #ef4444; font-size: 0.875rem;">
+              <AlertCircle :size="16" />
+              {{ evaluationError }}
+            </div>
+            <button
+              class="btn-glass-secondary w-full"
+              :disabled="isGeneratingEvaluation"
+              @click="handleGenerateEvaluation"
+            >
+              <Loader2 v-if="isGeneratingEvaluation" :size="18" class="animate-spin" />
+              <Sparkles v-else :size="18" />
+              {{ isGeneratingEvaluation ? '幸福设计师正在阅读...' : '重新生成 AI 评价' }}
+            </button>
+          </div>
         </div>
 
         <!-- 生成评价按钮 -->

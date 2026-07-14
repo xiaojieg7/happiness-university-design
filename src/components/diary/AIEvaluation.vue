@@ -90,6 +90,22 @@ function dimColor(score: number): string {
         >
           幸福设计师的评价
         </span>
+        <!-- 降级标记 -->
+        <span
+          v-if="evaluation.isFallback"
+          style="
+            margin-left: 0.5rem;
+            padding: 0.15rem 0.5rem;
+            border-radius: 6px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            background: rgba(245, 158, 11, 0.15);
+            color: #d97706;
+            border: 1px solid rgba(245, 158, 11, 0.25);
+          "
+        >
+          预设评价
+        </span>
       </div>
 
       <!-- 幸福指数仪表盘 -->

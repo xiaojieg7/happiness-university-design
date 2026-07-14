@@ -56,6 +56,7 @@ export interface AIEvaluation {
   happinessScore?: number           // 幸福指数总分 0-100
   dimensionScores?: DimensionScore[] // 五维评分
   summary?: string                   // 一句话总结
+  isFallback?: boolean               // 是否为降级预设数据（非真实AI评价）
 }
 
 // 图片存储

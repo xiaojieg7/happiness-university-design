@@ -132,11 +132,23 @@ class DiaryStorage {
             happinessScore: result.happinessScore,
             dimensionScores: result.dimensionScores,
             summary: result.summary || '',
+            isFallback: result.isFallback || false,
           })
         } else {
           resolve(null)
         }
       }
+      request.onerror = () => reject(request.error)
+    })
+  }
+
+  async deleteEvaluation(diaryId: string): Promise<void> {
+    if (!this.db) await this.init()
+    return new Promise((resolve, reject) => {
+      const tx = this.db!.transaction('evaluations', 'readwrite')
+      const store = tx.objectStore('evaluations')
+      const request = store.delete(diaryId)
+      request.onsuccess = () => resolve()
       request.onerror = () => reject(request.error)
     })
   }

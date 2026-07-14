@@ -175,7 +175,7 @@ ${entry.content}
     console.log('[AI评价] 请求URL:', url, '模型:', settingsStore.modelName)
 
     const controller = new AbortController()
-    const timeoutId = setTimeout(() => controller.abort(), 30000) // 30秒超时
+    const timeoutId = setTimeout(() => controller.abort(), 120000) // 120秒超时
 
     const response = await fetch(url, {
       method: 'POST',
@@ -240,9 +240,9 @@ ${entry.content}
     }
   } catch (error) {
     const isTimeout = error instanceof Error && error.name === 'AbortError'
-    const message = isTimeout ? '请求超时（30秒）' : String(error)
+    const message = isTimeout ? '请求超时（120秒）' : String(error)
     console.error('[AI评价] 请求失败, 降级为预设:', message)
-    // API 出错时降级为预设
+    // API 出错时降级为预设（标记为降级数据，不会被持久化保存）
     return getFallbackEvaluation(entry)
   }
 }
@@ -266,6 +266,7 @@ function getFallbackEvaluation(entry: DiaryEntry): AIEvaluation {
   return {
     ...fallback,
     generatedAt: new Date().toISOString(),
+    isFallback: true, // 标记为降级数据，不会被持久化保存
   }
 }
 

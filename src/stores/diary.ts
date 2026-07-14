@@ -52,11 +52,21 @@ export const useDiaryStore = defineStore('diary', () => {
 
       // 从 IndexedDB 加载每篇日记的 AI 评价
       for (const diary of diaries.value) {
+        // 清理之前错误保存的降级数据
+        if (diary.aiEvaluation?.isFallback) {
+          diary.aiEvaluation = undefined
+          storage.saveDiary(diary)
+        }
         if (!diary.aiEvaluation) {
           try {
             const evaluation = await storage.getEvaluation(diary.id)
             if (evaluation) {
-              diary.aiEvaluation = evaluation
+              // 过滤掉之前错误保存的降级数据
+              if (evaluation.isFallback) {
+                await storage.deleteEvaluation(diary.id)
+              } else {
+                diary.aiEvaluation = evaluation
+              }
             }
           } catch (e) {
             console.warn('加载评价失败:', diary.id, e)
@@ -107,14 +117,20 @@ export const useDiaryStore = defineStore('diary', () => {
     try {
       console.log('[AI评价] 开始生成评价, diaryId:', entry.id)
       const evaluation = await evaluateDiary(entry)
-      console.log('[AI评价] 评价生成成功:', evaluation.content?.substring(0, 50))
+      console.log('[AI评价] 评价生成成功, isFallback:', evaluation.isFallback, ', content:', evaluation.content?.substring(0, 50))
 
       const diary = diaries.value.find((d) => d.id === entry.id)
       if (diary) {
         diary.aiEvaluation = evaluation
-        storage.saveDiary(diary)
-        await storage.saveEvaluation(entry.id, evaluation)
-        console.log('[AI评价] 已保存到存储')
+
+        // 只有真实AI评价才持久化保存，降级数据只在内存中显示
+        if (!evaluation.isFallback) {
+          storage.saveDiary(diary)
+          await storage.saveEvaluation(entry.id, evaluation)
+          console.log('[AI评价] 真实评价已保存到存储')
+        } else {
+          console.log('[AI评价] 降级数据不保存到存储，等待用户重新生成')
+        }
       } else {
         console.warn('[AI评价] 未找到对应日记:', entry.id)
       }
@@ -264,8 +280,16 @@ export const useDiaryStore = defineStore('diary', () => {
     try {
       const evaluation = await evaluateDiary(diary)
       diary.aiEvaluation = evaluation
-      storage.saveDiary(diary)
-      await storage.saveEvaluation(id, evaluation)
+
+      // 只有真实AI评价才持久化保存
+      if (!evaluation.isFallback) {
+        storage.saveDiary(diary)
+        await storage.saveEvaluation(id, evaluation)
+        console.log('[AI评价] 手动生成真实评价已保存')
+      } else {
+        console.log('[AI评价] 手动生成降级数据不保存')
+      }
+
       return evaluation
     } catch (error) {
       console.error('[AI评价] 手动生成失败:', error)
