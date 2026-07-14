@@ -32,6 +32,7 @@ jobs:
         run: |
           npm ci
           npm run build
+          ls -la dist/          # ← 加这句，Actions 日志里就能看到 dist 里到底有啥
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
